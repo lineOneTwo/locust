@@ -21,7 +21,8 @@ class UserBehavior(TaskSet):
     def test_visit(self):
         url = self.share_data[self.index]
         self.index = (self.index + 1) % len(self.share_data)
-        self.client.get(url, headers={'token': UserBehavior.getToken(self)})
+        with self.client.get(url, headers={'token': UserBehavior.getToken(self)}, catch_response=True) as response:
+            assert response.status_code == 200
 
 
 class WebsiteUser(HttpUser):
