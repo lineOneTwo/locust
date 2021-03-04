@@ -1,35 +1,45 @@
-from locust import TaskSet, task, HttpUser, between, LoadTestShape
-from locust.contrib.fasthttp import FastHttpUser
-import time
+from locust import TaskSet, task, HttpUser, between
+
 
 class UserBehavior(TaskSet):
-    wait_time=between(1,2.5)
+    wait_time = between(1, 2.5)
 
-    @task(1)
-    def baidu_index(self):
-        self.client.get("/")
+    def getToken(self):
+        reqIndex = self.client.get("/index")
+        token = reqIndex.json()['data']['token']
+        return token
+
+    @task
+    def list_name(self):
+        req = self.client.post("/itemsList/name/0/10", headers={"token": UserBehavior.getToken(self)},
+                               data={"itemListName": "查询", "pageSize": "10", "pageNo": "0"})
+
+    @task
+    def list_example(self):
+        req = self.client.post("/itemsList/example/0/10", headers={"token": UserBehavior.getToken(self)},
+                               data={"departmentId": "0", "pageSize": "10", "pageNo": "0", "themeType": "1"})
+        id = req.json()['data']['resultList'][0]['itemsListId']
+        return id
+
+    @task
+    def department(self):
+        req = self.client.post("/department/tree", headers={"token": UserBehavior.getToken(self)})
+
+    @task
+    def info(self):
+        req = self.client.get(f"/itemsList/info/{UserBehavior.list_example(self)}",
+                              headers={"token": UserBehavior.getToken(self)})
+
+    @task
+    def info(self):
+        req = self.client.get(f"/handleItemFlow/{UserBehavior.list_example(self)}",
+                              headers={"token": UserBehavior.getToken(self)})
+
+    @task
+    def info(self):
+        req = self.client.get(f"/legal/{UserBehavior.list_example(self)}",
+                              headers={"token": UserBehavior.getToken(self)})
+
 
 class WebsiteUser(HttpUser):
     tasks = [UserBehavior]
-    min_wait = 3000
-    max_wait = 6000
-#
-# class MyUser(FastHttpUser):
-#     wait_time = between(2,5)
-#
-#     @task
-#     def index(self):
-#         response = self.client.get("/")
-
-class MyCustomShape(LoadTestShape):
-    time_limit = 600
-    spawn_rate = 20
-
-    def tick(self):
-        run_time = self.get_run_time()
-
-        if run_time < self.time_limit:
-            user_count = round(run_time,-2)
-            return (user_count, self.spawn_rate)
-
-        return None
