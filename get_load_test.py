@@ -23,6 +23,10 @@ class UserBehavior(TaskSet):
         self.index = (self.index + 1) % len(self.share_data)
         with self.client.get(url, headers={'token': UserBehavior.getToken(self)}, catch_response=True) as response:
             assert response.status_code == 200
+            if response.status_code == 200:
+                response.success()
+            else:
+                response.failure("can't")
 
 
 class WebsiteUser(HttpUser):
